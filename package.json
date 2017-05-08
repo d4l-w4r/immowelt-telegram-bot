@@ -1,0 +1,12 @@
+{
+  "name": "immowelt-telegram-bot",
+  "version": "0.0.1",
+  "description": "Node service that implements a telegram bot to send new Immowelt offers to chats",
+  "main": "service.js",
+  "author": "Daniel Waller",
+  "dependencies": {
+    "request": "^2.81.0",
+    "telegram-node-bot": "^4.0.5",
+    "underscore": "^1.8.3"
+  }
+}
