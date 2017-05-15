@@ -104,7 +104,7 @@ module.exports.Bot = function(telegramInstance) {
     filterApi.getUpdates(chatId)
       .then(function(result) {
         _.each(result['data'], function(entry) {
-          sendMessage(chatId, buildTelegramMessage(entry))
+          _.delay(sendMessage, 2 * 1000, chatId, buildTelegramMessage(entry))
         });
       })
       .catch(function(error) {
