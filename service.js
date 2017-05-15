@@ -1,24 +1,40 @@
 const _ = require('underscore');
-const telegram = require('telegram-bot-api');
+const fs = require('fs');
+const timeStamp = require('time-stamp');
+const telegram = require('node-telegram-bot-api');
 
-var api = new telegram({
-  token: '351490564:AAES4bmKq5akFfeNjz0fcgYUiKscmhrWQrI'),
-  updates: { enabled: true }
+const telegramBot = require('./bot');
+
+var apiKey = function() {
+  if (fs.existsSync('botconf.json')) {
+    data = fs.readFileSync('botconf.json', {"encoding": "utf8"});
+    if (data != "") {
+      return JSON.parse(data)['telegram-api-key'];
+    }
+  }
 };
+var api = new telegram(apiKey(), {polling: true});
 
-api.on('message', function(message){
+var bot = new telegramBot.Bot(api);
+
+api.onText(/\/(.+)/, function(message, match){
+  console.log(message)
   if (isBotMessage(message)) {
     var chatId = message.chat.id;
-    var command = parseBotCommand(message.entities);
-
+    var cmdOffsets = parseBotCommand(message.entities);
+    var command = message.text.substring(cmdOffsets.commandStart, cmdOffsets.commandEnd);
+    console.log(command);
     switch (command) {
-      case 'startReporting':
-        bot.startReporting(chatId);
+      case '/startReporting':
+        var filterParams = parseFilterParameters(message.text);
+        console.log("Parsed parameters: ");
+        console.log(filterParams);
+        bot.startReporting(chatId, filterParams);
         break;
-      case 'stopReporting':
+      case '/stopReporting':
         bot.stopReporting(chatId);
         break;
-      case 'getNew':
+      case '/getNew':
         bot.getNew(chatId);
         break;
       default:
@@ -27,15 +43,34 @@ api.on('message', function(message){
   }
 });
 
-var isBotMessage = function(message) {
-  var messageIsText = message.text;
-  var hasBotCommand = false;
-  if (messageIsText) {
-    var hasBotCommand = _.some(message.entities, function(entity) {
-      entity.type == 'bot_command';
+var parseFilterParameters = function(message) {
+  var params = message.match(/\(.+\)/);
+  var parameters = {};
+  if (params && params.length > 0) {
+    var stripped = params[0].replace('(', '').replace(')', '');
+    _.each(stripped.split(', '), function(parameter) {
+      var kvp = parameter.split("=");
+      if (kvp[1].indexOf('-') > -1) {
+        parameters[kvp[0]] = timeStamp(kvp[1]);
+      } else {
+        parameters[kvp[0]] = kvp[1];
+      }
     });
   }
-  return messageIsText && hasBotCommand;
+  return parameters;
+}
+
+var isBotMessage = function(message) {
+  var messageIsText = message.text;
+  console.log("Is text: " + messageIsText);
+  if (messageIsText) {
+    var hasBotCommand = _.some(message.entities, function(entity) {
+      return entity['type'] == 'bot_command';
+    });
+
+    return messageIsText && hasBotCommand;
+  }
+  return false;
 }
 
 var parseBotCommand = function(messageEntities) {
@@ -46,10 +81,8 @@ var parseBotCommand = function(messageEntities) {
 };
 
 var sendUnsupportedOperationError = function(chatId, unsupportedOperation) {
-  bot.sendMessage({
-    chat_id: chatId,
-    text: "Unsupported operation:\"" + message.text + "\"."
-  }).catch(function(error) {
+  api.sendMessage(chatId, "Unsupported operation:\"" + message.text + "\".")
+  .catch(function(error) {
     console.log(error);
   });
 }

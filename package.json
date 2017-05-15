@@ -5,8 +5,9 @@
   "main": "service.js",
   "author": "Daniel Waller",
   "dependencies": {
+    "node-telegram-bot-api": "^0.27.1",
     "request": "^2.81.0",
-    "telegram-node-bot": "^4.0.5",
+    "time-stamp": "^2.0.0",
     "underscore": "^1.8.3"
   }
 }
